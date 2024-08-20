@@ -2,6 +2,18 @@ use std::str::from_utf8;
 
 use git2::{ObjectType, Oid, Repository};
 
+/// Get the commit **SHA** for a given tag.
+///
+/// # Panics
+///
+/// Will panic if no repository is found in current directory or any of the parents
+/// or it fails to get the reference to the provided tag.
+///
+/// # Example
+///
+/// ```
+/// get_tag_head("v0.0.5");
+/// ```
 pub fn get_tag_head(tag_name: &str) -> Oid {
     let repo = match Repository::open_from_env() {
         Ok(repo) => repo,
@@ -10,12 +22,24 @@ pub fn get_tag_head(tag_name: &str) -> Oid {
 
     let object = match repo.revparse_single(tag_name) {
         Ok(object) => object,
-        Err(e) => panic!("failed to get revwalk: {}", e),
+        Err(e) => panic!("failed to get reference: {}", e),
     };
 
     object.id()
 }
 
+/// Get all the tags for a given branch.
+///
+/// # Panics
+///
+/// Will panic if no repository is found in current directory or any of the parents
+/// or it fails to get the branch reference or traverse the repository tags.
+///
+/// # Example
+///
+/// ```
+/// get_tags("origin/release-v0.0.15");
+/// ```
 pub fn get_tags(branch: &str) -> Vec<String> {
     let mut tags = Vec::new();
 
@@ -62,6 +86,22 @@ pub fn get_tags(branch: &str) -> Vec<String> {
     tags
 }
 
+/// Retrieve a range of commits.
+///
+/// # Panics
+///
+/// Will panic if no repository is found in current directory or any of the parents
+/// or it fails to get revwalk the repository or if any of the provided arguments is
+/// not a valid SHA commit.
+///
+/// # Example
+///
+/// ```
+/// get_commits(
+///    "0779705ecc46cbced5059bcbadee7b8d254d4300",
+///    "3d92276063e6ebb33d63e2d20bf23d405f9d4925",
+/// );
+/// ```
 pub fn get_commits(from: &str, to: &str) -> Vec<String> {
     let repo = match Repository::open_from_env() {
         Ok(repo) => repo,
