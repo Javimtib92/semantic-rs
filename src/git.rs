@@ -137,3 +137,40 @@ pub fn get_commits(from: &str, to: &str) -> Vec<String> {
 
     commits
 }
+
+/// Get all the repository branches.
+///
+/// # Panics
+///
+/// Will panic if no repository is found in current directory or any of the parents
+/// or it fails to get remote branches.
+///
+/// # Example
+///
+/// ```
+/// get_branches();
+/// ```
+pub fn get_branches() -> Vec<String> {
+    let repo = match Repository::open_from_env() {
+        Ok(repo) => repo,
+        Err(e) => panic!("failed to clone: {}", e),
+    };
+
+    let branches = repo
+        .branches(Some(git2::BranchType::Remote))
+        .expect("Couldn\'t retrieve any branches for this repository.");
+
+    let branch_names = branches
+        .filter_map(|branch_result| {
+            match branch_result {
+                Ok((branch, _)) => branch
+                    .name()
+                    .unwrap_or(None)
+                    .and_then(|branch_name| Some(branch_name.to_string())),
+                Err(_) => None, // Skip branches that result in an error
+            }
+        })
+        .collect::<Vec<String>>();
+
+    branch_names
+}
