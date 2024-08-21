@@ -1,4 +1,6 @@
-use semantic_release::git::{get_branches, get_commits, get_tag_head, get_tags, is_ref_exists};
+use semantic_release::git::{
+    get_branches, get_commits, get_git_head, get_tag_head, get_tags, is_ref_exists,
+};
 
 fn main() {
     get_tag_head("v0.0.5");
@@ -16,4 +18,6 @@ fn main() {
     let exists = is_ref_exists("origin/release-v0.0.15");
 
     println!("{}", exists);
+
+    println!("{:?}", get_git_head())
 }

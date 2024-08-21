@@ -196,3 +196,27 @@ pub fn is_ref_exists(reference: &str) -> bool {
 
     exists
 }
+
+/// Get the HEAD sha.
+///
+/// # Panics
+///
+/// Will panic if no repository is found in current directory or any of the parents, cannot get the HEAD ref or it cannot get the target it points to.
+///
+/// # Example
+///
+/// ```
+/// get_git_head();
+/// ```
+pub fn get_git_head() -> Oid {
+    let repo = match Repository::open_from_env() {
+        Ok(repo) => repo,
+        Err(e) => panic!("failed to clone: {}", e),
+    };
+
+    let head = repo
+        .head()
+        .expect("Couldn\'t get HEAD ref for this repository");
+
+    head.target().expect("Couldn't get the target OID")
+}
