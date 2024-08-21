@@ -220,3 +220,27 @@ pub fn get_git_head() -> Oid {
 
     head.target().expect("Couldn't get the target OID")
 }
+
+/// Get the repository remote URL.
+///
+/// # Panics
+///
+/// Will panic if no repository is found in current directory or any of the parents, cannot get config or cannot get the remote origin url.
+///
+/// # Example
+///
+/// ```
+/// get_repository_url();
+/// ```
+pub fn get_repository_url() -> String {
+    let repo = match Repository::open_from_env() {
+        Ok(repo) => repo,
+        Err(e) => panic!("failed to clone: {}", e),
+    };
+
+    let config = repo.config().expect("Couldn\'t get the repository config");
+
+    config
+        .get_string("remote.origin.url")
+        .expect("Couldn\'t get the remote origin url")
+}

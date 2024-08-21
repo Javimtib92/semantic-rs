@@ -1,5 +1,5 @@
 use semantic_release::git::{
-    get_branches, get_commits, get_git_head, get_tag_head, get_tags, is_ref_exists,
+    get_branches, get_commits, get_repository_url, get_tag_head, get_tags, is_ref_exists,
 };
 
 fn main() {
@@ -19,5 +19,5 @@ fn main() {
 
     println!("{}", exists);
 
-    println!("{:?}", get_git_head())
+    println!("{:?}", get_repository_url())
 }
