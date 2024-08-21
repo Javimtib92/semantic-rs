@@ -174,3 +174,25 @@ pub fn get_branches() -> Vec<String> {
 
     branch_names
 }
+
+/// Verify if the `ref` exits
+///
+/// # Panics
+///
+/// Will panic if no repository is found in current directory or any of the parents
+///
+/// # Example
+///
+/// ```
+/// is_ref_exists("origin/release-v0.0.15");
+/// ```
+pub fn is_ref_exists(reference: &str) -> bool {
+    let repo = match Repository::open_from_env() {
+        Ok(repo) => repo,
+        Err(e) => panic!("failed to clone: {}", e),
+    };
+
+    let exists = repo.revparse_single(reference).is_ok();
+
+    exists
+}
