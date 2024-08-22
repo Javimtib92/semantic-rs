@@ -1,5 +1,5 @@
 use semantic_release::git::{
-    get_branches, get_commits, get_repository_url, get_tag_head, get_tags, is_ref_exists,
+    get_branches, get_commits, get_tag_head, get_tags, is_ref_exists, verify_auth,
 };
 
 fn main() {
@@ -19,5 +19,8 @@ fn main() {
 
     println!("{}", exists);
 
-    println!("{:?}", get_repository_url())
+    println!(
+        "{:?}",
+        verify_auth("git@github.com:Javimtib92/papyrust.git", "main")
+    )
 }

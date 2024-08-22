@@ -1,6 +1,6 @@
 use std::str::from_utf8;
 
-use git2::{ObjectType, Oid, Repository};
+use git2::{Cred, Direction, ObjectType, Oid, PushOptions, RemoteCallbacks, Repository};
 
 /// Get the commit **SHA** for a given tag.
 ///
@@ -243,4 +243,78 @@ pub fn get_repository_url() -> String {
     config
         .get_string("remote.origin.url")
         .expect("Couldn\'t get the remote origin url")
+}
+
+/// Test if the current working directory is a Git repository.
+///
+/// # Example
+///
+/// ```
+/// is_git_repo();
+/// ```
+pub fn is_git_repo() -> bool {
+    Repository::open_from_env().is_ok()
+}
+
+/// Verify write access authorization to remote repository with
+/// push dry-run.
+/// # Panics
+///
+/// Will panic if no repository is found in current directory or any of the parents, cannot get config or cannot create a remote or cannot connect.
+///
+/// # Example
+///
+/// ```
+/// verify_auth("git@github.com:Javimtib92/papyrust.git", "main");
+/// ```
+pub fn verify_auth(repository_url: &str, branch: &str) -> bool {
+    // Open the repository in the current directory
+    let repo = match Repository::open_from_env() {
+        Ok(repo) => repo,
+        Err(e) => panic!("failed to clone: {}", e),
+    };
+
+    let mut remote = repo
+        .remote_anonymous(repository_url)
+        .expect("Couldn\'t create a remote with the provided URL");
+
+    // Set up callbacks for authentication
+    let mut callbacks = RemoteCallbacks::new();
+
+    let mut ssh_attempts_count = 0;
+
+    callbacks.credentials(|_url, username, allowed| {
+        if allowed.contains(git2::CredentialType::SSH_KEY) {
+            // If ssh-agent authentication fails, libgit2 will keep
+            // calling this callback asking for other authentication
+            // methods to try. Make sure we only try ssh-agent once.
+            ssh_attempts_count += 1;
+            // dbg!(self.ssh_attempts_count);
+            let u = username.unwrap_or("git");
+            return if ssh_attempts_count == 1 {
+                Cred::ssh_key_from_agent(u)
+            } else {
+                Err(git2::Error::from_str("try with an other username"))
+            };
+        }
+
+        if allowed.contains(git2::CredentialType::DEFAULT) {
+            return git2::Cred::default();
+        }
+
+        Err(git2::Error::from_str("no valid authentication available"))
+    });
+
+    let mut push_options = PushOptions::new();
+
+    remote
+        .connect_auth(Direction::Push, Some(callbacks), None)
+        .expect("Couldn't connect");
+
+    remote
+        .push(
+            &[format!("HEAD:refs/heads/{}", branch)],
+            Some(&mut push_options),
+        )
+        .is_ok()
 }
