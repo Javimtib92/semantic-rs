@@ -1,26 +1,15 @@
-use semantic_release::git::{
-    get_branches, get_commits, get_tag_head, get_tags, is_ref_exists, verify_auth,
-};
-
 fn main() {
-    get_tag_head("v0.0.5");
+    let github_actions = std::env::var("GITHUB_ACTIONS");
+    let github_event_name = std::env::var("GITHUB_EVENT_NAME");
 
-    get_tags("origin/release-v0.0.15");
-    get_tags("origin/release-v0.0.9");
+    let is_ci = github_actions.is_ok();
 
-    get_commits(
-        "0779705ecc46cbced5059bcbadee7b8d254d4300",
-        "3d92276063e6ebb33d63e2d20bf23d405f9d4925",
-    );
+    let is_pr = github_event_name
+        .and_then(|value| Ok(value == "pull_request" || value == "pull_request_target"))
+        .unwrap_or(false);
 
-    get_branches();
-
-    let exists = is_ref_exists("origin/release-v0.0.15");
-
-    println!("{}", exists);
-
-    println!(
-        "{:?}",
-        verify_auth("git@github.com:Javimtib92/papyrust.git", "main")
-    )
+    let branch = match is_pr {
+        true => std::env::var("GITHUB_HEAD_REF").ok(),
+        false => std::env::var("GITHUB_REF").ok(),
+    };
 }
