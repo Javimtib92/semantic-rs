@@ -110,28 +110,26 @@ pub fn get_commits(from: &str, to: &str) -> Vec<String> {
 
     let mut revwalk = repo.revwalk().expect("Couldn\'t retrieve revwalk");
 
-    let from =
-        Oid::from_str(from).expect(&format!("from parameter \"{:?}\" is not a valid SHA", from));
+    let from = Oid::from_str(from)
+        .unwrap_or_else(|_| panic!("from parameter \"{:?}\" is not a valid SHA", from));
 
-    let to = Oid::from_str(to).expect(&format!("to parameter \"{:?}\" is not a valid SHA", to));
+    let to = Oid::from_str(to)
+        .unwrap_or_else(|_| panic!("to parameter \"{:?}\" is not a valid SHA", to));
 
-    revwalk.push(to).expect(&format!(
-        "Couldn\'t set revwalk root to commit \"{:?}\"",
-        to
-    ));
+    revwalk
+        .push(to)
+        .unwrap_or_else(|_| panic!("Couldn\'t set revwalk root to commit \"{:?}\"", to));
 
     revwalk
         .hide(from)
-        .expect(&format!("Couldn\'t hide commit \"{:?}\"", from));
+        .unwrap_or_else(|_| panic!("Couldn\'t hide commit \"{:?}\"", from));
 
     let mut commits = Vec::new();
 
-    for oid in revwalk {
-        if let Ok(oid) = oid {
-            let commit = repo.find_commit(oid).expect("Couldn\'t find commit");
-            if let Some(message) = commit.message() {
-                commits.push(message.to_string());
-            }
+    for oid in revwalk.flatten() {
+        let commit = repo.find_commit(oid).expect("Couldn\'t find commit");
+        if let Some(message) = commit.message() {
+            commits.push(message.to_string());
         }
     }
 

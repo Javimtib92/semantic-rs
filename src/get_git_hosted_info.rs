@@ -72,11 +72,15 @@ fn main_function(
     let parsed_protocol = parsed.scheme();
     let parsed_host = parsed.host_str().unwrap_or("").to_string();
     let git_host_shortcut = git_hosts.by_shortcut.get(parsed_protocol);
-    let git_host_domain = git_hosts.by_domain.get(if parsed_host.starts_with("www.") {
-        &parsed_host[4..]
-    } else {
-        &parsed_host
-    });
+    let git_host_domain =
+        git_hosts
+            .by_domain
+            .get(if let Some(stripped) = parsed_host.strip_prefix("www.") {
+                stripped
+            } else {
+                &parsed_host
+            });
+
     let git_host_name = git_host_shortcut.or(git_host_domain)?;
 
     let git_host_info = git_hosts.data.get(git_host_name)?;
@@ -94,10 +98,8 @@ fn main_function(
         }
     }
 
-    let default_representation;
-
-    if git_host_shortcut.is_some() {
-        default_representation = Some("shortcut".to_string());
+    let default_representation = if git_host_shortcut.is_some() {
+        Some("shortcut".to_string())
     } else {
         if !git_host_info
             .protocols
@@ -106,13 +108,13 @@ fn main_function(
             return None;
         }
 
-        default_representation = protocols
+        protocols
             .get(parsed_protocol)
             .and_then(|p| p.name.clone())
             .or(Some(
                 parsed_protocol[..parsed_protocol.len() - 1].to_string(),
-            ));
-    }
+            ))
+    };
 
     Some((git_host_name.clone(), auth, default_representation, opts))
 }

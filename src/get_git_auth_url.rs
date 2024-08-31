@@ -19,16 +19,16 @@ pub fn get_git_auth_url(context: &Context) -> String {
     }
 
     // Test if push is allowed without transforming the URL (e.g. is ssh keys are set up)
-    let is_verified: bool = verify_auth(&url.to_string(), &context.branch);
+    let is_verified: bool = verify_auth(url.as_ref(), &context.branch);
 
     if !is_verified {
         println!("SSH key auth failed, falling back to https.");
 
         let token_name = "GITHUB_TOKEN";
 
-        match std::env::var(&token_name) {
+        match std::env::var(token_name) {
             Ok(value) => {
-                url.set_username(&token_name)
+                url.set_username(token_name)
                     .expect("Couldn\'t set username");
 
                 url.set_password(Some(&value))
