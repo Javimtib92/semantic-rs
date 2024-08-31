@@ -1,4 +1,7 @@
-use semantic_release::{context::Context, get_config::get_config, verify_context::verify_context};
+use semantic_release::{
+    context::Context, get_config::get_config, get_git_auth_url::get_git_auth_url,
+    verify_context::verify_context,
+};
 
 const COMMIT_NAME: &str = "semantic-release-bot";
 const COMMIT_EMAIL: &str = "javimtib92@gmail.com";
@@ -10,12 +13,12 @@ fn main() {
     let is_ci = github_actions.is_ok();
 
     let is_pr = github_event_name
-        .and_then(|value| Ok(value == "pull_request" || value == "pull_request_target"))
+        .map(|value| value == "pull_request" || value == "pull_request_target")
         .unwrap_or(false);
 
     let branch = match is_pr {
-        true => std::env::var("GITHUB_HEAD_REF").ok(),
-        false => std::env::var("GITHUB_REF").ok(),
+        true => std::env::var("GITHUB_HEAD_REF").expect("Couldnt\'t get GITHUB_HEAD_REF"),
+        false => std::env::var("GITHUB_REF").expect("Couldnt\'t get GITHUB_REF"),
     };
 
     let config = get_config().expect("Couldn\'t get config file");
@@ -50,5 +53,18 @@ fn run(context: &mut Context) {
         return;
     }
 
-    verify_context(&context).expect("Context is not valid");
+    verify_context(context).expect("Context is not valid");
+
+    context.config.repository_url = get_git_auth_url(context);
+
+    context.config.branches = vec!["todo".to_owned(), "todo".to_owned()];
+
+    if context.config.branches.contains(&context.branch) {
+        println!(
+            "This test run was triggered on the branch {}, while semantic-release is configured to only publish from {}, therefore a new version won’t be published.", context.branch, context.config.branches.join(", "));
+
+        return;
+    }
+
+    println!("continue");
 }

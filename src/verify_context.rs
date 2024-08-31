@@ -19,7 +19,7 @@ pub fn verify_context(context: &Context) -> Result<(), Box<dyn Error>> {
 
     // TODO: validate branches
 
-    if errors.len() > 0 {
+    if errors.is_empty() {
         return Err(errors.concat().into());
     }
 

@@ -4,6 +4,6 @@ use crate::get_config::Config;
 pub struct Context {
     pub is_ci: bool,
     pub is_pr: bool,
-    pub branch: Option<String>,
+    pub branch: String,
     pub config: Config,
 }

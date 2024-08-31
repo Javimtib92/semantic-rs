@@ -166,7 +166,7 @@ pub fn get_branches() -> Vec<String> {
                 Ok((branch, _)) => branch
                     .name()
                     .unwrap_or(None)
-                    .and_then(|branch_name| Some(branch_name.to_string())),
+                    .map(|branch_name| branch_name.to_string()),
                 Err(_) => None, // Skip branches that result in an error
             }
         })
