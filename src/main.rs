@@ -1,3 +1,8 @@
+use semantic_release::{context::Context, get_config::get_config, verify_context::verify_context};
+
+const COMMIT_NAME: &str = "semantic-release-bot";
+const COMMIT_EMAIL: &str = "javimtib92@gmail.com";
+
 fn main() {
     let github_actions = std::env::var("GITHUB_ACTIONS");
     let github_event_name = std::env::var("GITHUB_EVENT_NAME");
@@ -12,4 +17,38 @@ fn main() {
         true => std::env::var("GITHUB_HEAD_REF").ok(),
         false => std::env::var("GITHUB_REF").ok(),
     };
+
+    let config = get_config().expect("Couldn\'t get config file");
+
+    let mut context = Context {
+        is_ci,
+        is_pr,
+        branch,
+        config,
+    };
+
+    run(&mut context);
+}
+
+fn run(context: &mut Context) {
+    if !context.is_ci && !context.config.dry_run && !context.config.ci {
+        // This run was not triggered in a known CI environment, running in dry-run mode.
+        context.config.dry_run = true;
+    } else {
+        // When running on CI, set the commits author and committer info and prevent the `git` CLI to prompt for username/password.
+
+        std::env::set_var("GIT_AUTHOR_NAME", COMMIT_NAME);
+        std::env::set_var("GIT_AUTHOR_EMAIL", COMMIT_EMAIL);
+        std::env::set_var("GIT_COMMITTER_NAME", COMMIT_NAME);
+        std::env::set_var("GIT_COMMITTER_EMAIL", COMMIT_EMAIL);
+        std::env::set_var("GIT_ASKPASS", "echo");
+        std::env::set_var("GIT_TERMINAL_PROMPT", "0");
+    }
+
+    if context.is_ci && context.is_pr && !context.config.ci {
+        // This run was triggered by a pull request and therefore a new version won't be published.
+        return;
+    }
+
+    verify_context(&context).expect("Context is not valid");
 }
